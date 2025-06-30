@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.app.personalbuddyback.mapper.RecommendMapper">
+    <insert id="insert" parameterType="InterestDataVO">
+        INSERT INTO TBL_INTEREST_DATA
+        VALUES (
+            SEQ_INTEREST_DATA.NEXTVAL, #{interestDataCategory}, #{interestDataType}, #{interestDataSection},
+            #{interestDataValue}, #{interestDataContent}, #{interestDataImgName}, #{interestDataImgPath}
+        )
+    </insert>
+
+    <select id="selectAll" resultType="InterestDataVO">
+        SELECT (
+                ID, INTEREST_DATA_CATEGORY, INTEREST_DATA_TYPE, INTEREST_DATA_SECTION, INTEREST_DATA_VALUE,
+                INTEREST_DATA_CONTENT, INTEREST_DATA_IMG_NAME, INTEREST_DATA_IMG_PATH
+            )
+        FROM TBL_INTEREST_DATA
+    </select>
+    
+    <select id="selectInterestDataByMemberId" parameterType="Long" resultType="InterestDataVO">
+        SELECT
+            TBD.ID,
+            TBD.INTEREST_DATA_CATEGORY,
+            TBD.INTEREST_DATA_TYPE,
+            TBD.INTEREST_DATA_SECTION,
+            TBD.INTEREST_DATA_VALUE,
+            TBD.INTEREST_DATA_CONTENT,
+            TBD.INTEREST_DATA_IMG_NAME,
+            TBD.INTEREST_DATA_IMG_PATH,
+            TBD.INTEREST_DATA_LINK
+        FROM
+            TBL_INTEREST_DATA TBD
+            JOIN
+            TBL_INTEREST_DETAIL TBID
+            ON TBD.INTEREST_DATA_SECTION = TBID.INTEREST_DETAIL_SECTION
+                AND TBD.INTEREST_DATA_VALUE = TBID.INTEREST_DETAIL_VALUE
+            JOIN
+            TBL_INTEREST TBI
+            ON TBID.INTEREST_ID = TBI.ID
+        WHERE
+            TBI.MEMBER_ID = #{memberId}
+    </select>
+
+    <update id="update" parameterType="InterestDataVO">
+        UPDATE TBL_INTEREST_DATA
+        SET INTEREST_DATA_CATEGORY = #{interestDataCategory}, INTEREST_DATA_TYPE = #{interestDataType},
+            INTEREST_DATA_SECTION = #{interestDataSection}, INTEREST_DATA_VALUE = #{interestDataValue},
+            INTEREST_DATA_CONTENT = #{interestDataContent}, INTEREST_DATA_IMG_NAME = #{interestDataImgName},
+            INTEREST_DATA_IMG_PATH = #{interestDataImgPath}
+    </update>
+
+    <delete id="delete" parameterType="Long">
+        DELETE FROM TBL_INTEREST_DATA
+        WHERE ID = #{id}
+    </delete>
+</mapper>

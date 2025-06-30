@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.app.personalbuddyback.mapper.GuestBookMapper">
+<!--  방명록 작성  -->
+<!--  해당 마이페이지의 오너에게 세션값에 담긴 멤버아이디로 작성 / 생성시간 자동생성  -->
+    <insert id="insert" parameterType="GuestBookVO">
+        INSERT INTO TBL_GUESTBOOK (
+            ID,
+            GUESTBOOK_CONTENT,
+            OWNER_MEMBER_ID,
+            WRITER_MEMBER_ID
+        ) VALUES (
+            SEQ_GUESTBOOK.NEXTVAL,
+            #{guestbookContent},
+            #{ownerMemberId},
+            #{writerMemberId}
+        )
+    </insert>
+
+<!--  방명록리스트  -->
+<!--  마이페이지 아이디로, 해당 유저에게 적힌 방명록 리스트를 최신순으로 받아온다.  -->
+    <select id="selectAll" parameterType="Long" resultType="GuestBookVO">
+        SELECT
+            ID,
+            GUESTBOOK_CONTENT,
+            GUESTBOOK_CREATE_TIME,
+            WRITER_MEMBER_ID
+        FROM TBL_GUESTBOOK
+        WHERE OWNER_MEMBER_ID = #{ownerMemberId}
+        ORDER BY GUESTBOOK_CREATE_TIME DESC
+    </select>
+
+<!--  방명록 페이지네이션  -->
+    <select id="selectOnePage" parameterType="Map" resultType="GuestBookViewDTO">
+        SELECT
+            TG.ID,
+            TG.GUESTBOOK_CONTENT,
+            TG.GUESTBOOK_CREATE_TIME,
+            TG.OWNER_MEMBER_ID,
+            TG.WRITER_MEMBER_ID,
+            TM.MEMBER_NICKNAME AS WRITER_NAME,
+            TM.MEMBER_IMG_NAME,
+            TM.MEMBER_IMG_PATH
+        FROM TBL_GUESTBOOK TG
+        JOIN TBL_MEMBER TM ON TG.WRITER_MEMBER_ID = TM.ID
+        WHERE OWNER_MEMBER_ID = #{ownerMemberId}
+        ORDER BY ID DESC
+        OFFSET (#{page} - 1) * 4 ROWS
+        FETCH NEXT 4 ROWS ONLY
+    </select>
+
+<!--  방명록 삭제  -->
+<!--  방명록 아이디로 삭제  -->
+    <delete id="delete" parameterType="Long">
+        DELETE FROM TBL_GUESTBOOK
+        WHERE ID = #{id}
+    </delete>
+
+<!--  회원탈퇴용 방명록 전체 삭제  -->
+    <delete id="deleteAllByWithdraw" parameterType="Long">
+        DELETE FROM TBL_GUESTBOOK
+        WHERE OWNER_MEMBER_ID = #{memberId} OR WRITER_MEMBER_ID = #{memberId}
+    </delete>
+
+</mapper>

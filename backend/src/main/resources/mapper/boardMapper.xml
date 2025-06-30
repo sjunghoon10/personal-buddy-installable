@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.app.personalbuddyback.mapper.BoardMapper">
+
+    <!--    게시판 - 게시글 전체조회 -->
+    <select id="selectBoards" resultType="com.app.personalbuddyback.domain.BoardDTO">
+        SELECT
+        TBB.ID, TBB.BOARD_TITLE, TBB.BOARD_CONTENT, TBB.BOARD_CONTENT_VIEWS,
+        TBB.BOARD_CONTENT_CREATE_DATE, TBB.BOARD_CONTENT_UPDATE_DATE,
+        TBB.BOARD_HASHTAG, TBB.MEMBER_ID,
+        TBM.MEMBER_EMAIL, TBM.MEMBER_NICKNAME, TBM.MEMBER_IMG_PATH, TBM.MEMBER_IMG_NAME,
+        (
+        SELECT COUNT(ID)
+        FROM TBL_BOARD_LIKE
+        WHERE BOARD_ID = TBB.ID
+        ) AS BOARD_LIKE_COUNT,
+        (
+        SELECT COUNT(ID)
+        FROM TBL_BOARD_COMMENT
+        WHERE BOARD_ID = TBB.ID
+        ) AS BOARD_COMMENT_COUNT,
+        (
+        SELECT BOARD_IMG_PATH
+        FROM TBL_BOARD_IMG
+        WHERE BOARD_ID = TBB.ID
+        FETCH FIRST 1 ROWS ONLY
+        ) AS BOARD_IMG_PATH,
+        (
+        SELECT BOARD_IMG_NAME
+        FROM TBL_BOARD_IMG
+        WHERE BOARD_ID = TBB.ID
+        FETCH FIRST 1 ROWS ONLY
+        ) AS BOARD_IMG_NAME
+        FROM TBL_BOARD TBB
+        JOIN TBL_MEMBER TBM
+        ON TBB.MEMBER_ID = TBM.ID
+        <choose>
+            <when test="boardHashtag != null and boardHashtag != '' and (searchKeyword == null or searchKeyword == '')">
+                WHERE TBB.BOARD_HASHTAG = #{boardHashtag}
+            </when>
+            <when test="(boardHashtag == null or boardHashtag == '') and searchKeyword != null and searchKeyword != ''">
+                WHERE TBB.BOARD_TITLE LIKE '%' || #{searchKeyword} || '%' OR TBB.BOARD_CONTENT LIKE '%' || #{searchKeyword} || '%'
+            </when>
+            <when test="boardHashtag != null and boardHashtag != '' and searchKeyword != null and searchKeyword != ''">
+                WHERE TBB.BOARD_HASHTAG = #{boardHashtag} AND TBB.BOARD_TITLE LIKE '%' || #{searchKeyword} || '%' OR TBB.BOARD_CONTENT LIKE '%' || #{searchKeyword} || '%'
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="order == '좋아요순'">
+                ORDER BY BOARD_LIKE_COUNT DESC
+            </when>
+            <when test="order == '조회순'">
+                ORDER BY BOARD_CONTENT_VIEWS DESC
+            </when>
+            <otherwise>
+                ORDER BY TBB.ID DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--    게시판 - HOT게시글 10개 -->
+    <select id="selectHotBoards">
+        SELECT
+            TBB.ID, TBB.BOARD_TITLE, TBB.BOARD_CONTENT, TBB.BOARD_CONTENT_VIEWS,
+            TBB.BOARD_CONTENT_CREATE_DATE, TBB.BOARD_CONTENT_UPDATE_DATE,
+            TBB.BOARD_HASHTAG, TBB.MEMBER_ID,
+            TBM.MEMBER_EMAIL, TBM.MEMBER_NICKNAME, TBM.MEMBER_IMG_PATH, TBM.MEMBER_IMG_NAME,
+            (
+                SELECT COUNT(ID)
+                FROM TBL_BOARD_LIKE
+                WHERE BOARD_ID = TBB.ID
+            ) AS BOARD_LIKE_COUNT,
+            (
+                SELECT COUNT(ID)
+                FROM TBL_BOARD_COMMENT
+                WHERE BOARD_ID = TBB.ID
+            ) AS BOARD_COMMENT_COUNT,
+            (
+                SELECT BOARD_IMG_PATH
+                FROM TBL_BOARD_IMG
+                WHERE BOARD_ID = TBB.ID
+                    FETCH FIRST 1 ROWS ONLY
+            ) AS BOARD_IMG_PATH,
+            (
+                SELECT BOARD_IMG_NAME
+                FROM TBL_BOARD_IMG
+                WHERE BOARD_ID = TBB.ID
+                    FETCH FIRST 1 ROWS ONLY
+            ) AS BOARD_IMG_NAME
+        FROM TBL_BOARD TBB
+                 JOIN TBL_MEMBER TBM
+                      ON TBB.MEMBER_ID = TBM.ID
+        ORDER BY BOARD_LIKE_COUNT DESC
+            FETCH FIRST 10 ROWS ONLY
+    </select>
+
+
+    <!--    Board List  -->
+    <!--    게시글 전체 목록-->
+    <select id="selectBoardList" resultType="BoardListViewDTO">
+        SELECT ID, BOARD_TITLE, BOARD_CONTENT_CREATE_DATE, BOARD_CONTENT_VIEWS, BOARD_HASHTAG,
+               MEMBER_NICKNAME, MEMBER_IMG_NAME, MEMBER_IMG_PATH,
+               BOARD_COMMENT_COUNT, BOARD_LIKE_COUNT
+        FROM VW_BOARD_LIST
+        ORDER BY BOARD_CONTENT_CREATE_DATE DESC
+    </select>
+
+    <!--    내가 쓴 게시글(마이페이지용) -->
+    <select id="selectBoardListByMemberId" parameterType="long" resultType="BoardListViewDTO">
+        SELECT TBB.ID,
+               TBB.BOARD_TITLE,
+               TBB.BOARD_CONTENT,
+               TBB.BOARD_CONTENT_CREATE_DATE AS BOARD_CREATE_DATE,
+               TBB.BOARD_CONTENT_VIEWS, TBB.BOARD_HASHTAG,
+               TBM.ID AS MEMBER_ID, TBM.MEMBER_NICKNAME, TBM.MEMBER_IMG_NAME, TBM.MEMBER_IMG_PATH,
+               (
+                   SELECT COUNT(ID) FROM TBL_BOARD_COMMENT C WHERE C.BOARD_ID = TBB.ID
+               ) AS BOARD_COMMENT_COUNT,
+               (
+                   SELECT COUNT(ID) FROM TBL_BOARD_LIKE L WHERE L.BOARD_ID = TBB.ID
+               ) AS BOARD_LIKE_COUNT,
+               (
+                   SELECT BOARD_IMG_PATH
+                   FROM TBL_BOARD_IMG
+                   WHERE BOARD_ID = TBB.ID
+                       FETCH FIRST 1 ROWS ONLY
+               ) AS BOARD_IMG_PATH,
+               (
+                   SELECT BOARD_IMG_NAME
+                   FROM TBL_BOARD_IMG
+                   WHERE BOARD_ID = TBB.ID
+                       FETCH FIRST 1 ROWS ONLY
+               ) AS BOARD_IMG_NAME
+        FROM TBL_BOARD TBB
+                 JOIN TBL_MEMBER TBM ON TBB.MEMBER_ID = TBM.ID
+        WHERE TBB.MEMBER_ID = #{memberId}
+        ORDER BY TBB.BOARD_CONTENT_CREATE_DATE DESC
+    </select>
+
+
+
+
+    <!--    HOT게시글(좋아요 수 많은 10개만)-->
+    <select id="selectHotBoardList" resultType="BoardListViewDTO">
+        SELECT ID, BOARD_TITLE, BOARD_CONTENT_CREATE_DATE, BOARD_CONTENT_VIEWS, BOARD_HASHTAG,
+               MEMBER_NICKNAME, MEMBER_IMG_NAME, MEMBER_IMG_PATH,
+               BOARD_COMMENT_COUNT, BOARD_LIKE_COUNT, BOARD_THUMBNAIL_URL
+        FROM VW_BOARD_LIST
+        ORDER BY BOARD_LIKE_COUNT DESC
+            FETCH FIRST 10 ROWS ONLY
+    </select>
+
+    <!--    게시글 검색 + 정렬 + 해시태그 필터링 -->
+    <select id="selectBoardListBySearch" parameterType="map" resultType="BoardListViewDTO">
+        SELECT ID, BOARD_TITLE, BOARD_CONTENT_CREATE_DATE, BOARD_CONTENT_VIEWS, BOARD_HASHTAG,
+        MEMBER_NICKNAME, MEMBER_IMG_NAME, MEMBER_IMG_PATH,
+        BOARD_COMMENT_COUNT, BOARD_LIKE_COUNT, BOARD_THUMBNAIL_URL
+        FROM VW_BOARD_LIST
+        WHERE 1=1
+        <if test="keywords != null and !keywords.isEmpty()"> <!-- 키워드 검색 -->
+            AND (
+            <foreach item="keyword" collection="keywords" separator="OR">
+                BOARD_TITLE LIKE '%' || #{keyword} || '%'
+                OR BOARD_HASHTAG LIKE '%' || #{keyword} || '%'
+                OR MEMBER_NICKNAME LIKE '%' || #{keyword} || '%'
+            </foreach>
+            )
+        </if>
+        <if test="hashtags != null and !hashtags.isEmpty()"> <!-- 해시태그 필터링 -->
+            AND BOARD_HASHTAG IN
+            <foreach item="tag" collection="hashtags" open="(" separator="," close=")">
+                #{tag}
+            </foreach>
+        </if>
+        <choose>
+            <when test="sort == 'recent'"> <!-- 정렬 조건 -->
+                ORDER BY BOARD_CONTENT_CREATE_DATE DESC
+            </when>
+            <when test="sort == 'like'">
+                ORDER BY BOARD_LIKE_COUNT DESC
+            </when>
+            <otherwise>
+                ORDER BY BOARD_CONTENT_CREATE_DATE DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--    Board Post  -->
+    <!--    게시글 상세 조회 -->
+    <select id="selectBoardById" parameterType="Long" resultType="BoardViewDTO">
+        SELECT
+            TBB.ID,
+            TBB.BOARD_TITLE,
+            TBB.BOARD_CONTENT,
+            TBB.BOARD_CONTENT_CREATE_DATE AS boardCreateDate,
+            TBB.BOARD_CONTENT_VIEWS AS boardContentViews,
+            TBB.BOARD_HASHTAG,
+            TBM.ID AS memberId,
+            TBM.MEMBER_NICKNAME AS memberNickName,
+            TBM.MEMBER_IMG_PATH AS memberImgPath,
+            TBM.MEMBER_IMG_NAME AS memberImgName,
+            (
+            SELECT COUNT(ID) FROM TBL_BOARD_COMMENT WHERE BOARD_ID = TBB.ID
+            ) AS boardCommentCount,
+            (
+            SELECT COUNT(ID) FROM TBL_BOARD_LIKE WHERE BOARD_ID = TBB.ID
+            ) AS boardLikeCount,
+            (
+             SELECT BOARD_IMG_PATH
+             FROM TBL_BOARD_IMG
+             WHERE BOARD_ID = TBB.ID
+             FETCH FIRST 1 ROWS ONLY
+            ) AS boardImgPath,
+            (
+             SELECT BOARD_IMG_NAME
+             FROM TBL_BOARD_IMG
+             WHERE BOARD_ID = TBB.ID
+             FETCH FIRST 1 ROWS ONLY
+            ) AS boardImgName
+        FROM TBL_BOARD TBB
+            JOIN TBL_MEMBER TBM ON TBB.MEMBER_ID = TBM.ID
+        WHERE TBB.ID = #{id}
+    </select>
+
+
+    <!-- 특정 멤버 게시글 조회 -->
+    <select id="selectBoardsByMemberId" parameterType="Long" resultType="BoardListViewDTO">
+        SELECT ID, BOARD_TITLE, BOARD_CONTENT, BOARD_CONTENT_CREATE_DATE, BOARD_CONTENT_UPDATE_DATE,
+               BOARD_CONTENT_VIEWS, BOARD_HASHTAG,
+               MEMBER_NICKNAME, MEMBER_IMG_NAME, MEMBER_IMG_PATH,
+               BOARD_COMMENT_COUNT, BOARD_LIKE_COUNT, BOARD_THUMBNAIL_URL
+        FROM VW_BOARD_LIST
+        WHERE MEMBER_ID = #{memberId}
+        ORDER BY BOARD_CONTENT_CREATE_DATE DESC
+    </select>
+
+    <!--    게시글 작성-->
+    <insert id="insertBoard" parameterType="BoardVO">
+        <selectKey keyProperty="id" resultType="Long" order="BEFORE">
+            SELECT SEQ_BOARD.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TBL_BOARD (
+        ID, BOARD_TITLE, BOARD_CONTENT, BOARD_CONTENT_VIEWS, BOARD_CONTENT_CREATE_DATE,
+        BOARD_CONTENT_UPDATE_DATE, BOARD_HASHTAG,MEMBER_ID
+        ) VALUES (
+        #{id}, #{boardTitle}, #{boardContent}, 0, SYSDATE,
+        SYSDATE, #{boardHashtag}, #{memberId}
+        )
+    </insert>
+
+    <!--    게시글 이미지 등록 -->
+    <insert id="insertBoardImage" parameterType="BoardImgVO">
+        INSERT INTO TBL_BOARD_IMG (
+            ID, BOARD_IMG_PATH, BOARD_IMG_NAME, BOARD_ID
+        ) VALUES (
+                     SEQ_BOARD_IMG.NEXTVAL, #{boardImgPath}, #{boardImgName}, #{boardId}
+                 )
+    </insert>
+
+    <!--    게시글 수정 -->
+    <update id="updateBoard" parameterType="BoardVO">
+        UPDATE TBL_BOARD
+        SET
+            BOARD_TITLE = #{boardTitle},
+            BOARD_CONTENT = #{boardContent},
+            BOARD_HASHTAG = #{boardHashtag},
+            BOARD_CONTENT_UPDATE_DATE = SYSDATE
+        WHERE
+            ID = #{id}
+    </update>
+
+    <!--    게시글 이미지 삭제(전체)-->
+    <delete id="deleteBoardImages" parameterType="Long">
+        DELETE FROM TBL_BOARD_IMG
+        WHERE BOARD_ID = #{boardId}
+    </delete>
+
+<!--    해당 게시글의 모든 이미지를 조회-->
+    <select id="selectImagesByBoardId" parameterType="Long" resultType="BoardImgVO">
+        SELECT ID, BOARD_IMG_PATH, BOARD_IMG_NAME, BOARD_ID
+        FROM TBL_BOARD_IMG
+        WHERE BOARD_ID = #{boardId}
+    </select>
+
+    <!--    특정 이미지 1개 삭제 -->
+    <delete id="deleteBoardImageById" parameterType="Long">
+        DELETE FROM TBL_BOARD_IMG
+        WHERE ID = #{id}
+    </delete>
+
+    <!-- 파일 이름으로 게시글 이미지 삭제 -->
+    <delete id="deleteBoardImageByName" parameterType="String">
+        DELETE FROM TBL_BOARD_IMG
+        WHERE BOARD_IMG_NAME = #{boardImgName}
+    </delete>
+
+    <!--    게시글 삭제-->
+    <delete id="deleteBoard" parameterType="Long">
+        DELETE
+        FROM TBL_BOARD
+        WHERE ID = #{id}
+    </delete>
+
+    <!--    게시글 조회수 1 증가-->
+    <update id="updateBoardViews" parameterType="Long">
+        UPDATE TBL_BOARD
+        SET BOARD_CONTENT_VIEWS = BOARD_CONTENT_VIEWS + 1
+        WHERE ID = #{id}
+    </update>
+
+    <!--    게시글 좋아요 추가-->
+    <insert id="insertBoardLike" parameterType="BoardLikeVO">
+        INSERT INTO TBL_BOARD_LIKE (ID, BOARD_LIKE_CREATE_DATE, MEMBER_ID, BOARD_ID
+        ) VALUES (
+                     SEQ_BOARD_LIKE.NEXTVAL, SYSDATE, #{memberId}, #{boardId}
+                 )
+    </insert>
+
+    <!--    게시글 좋아요 취소-->
+    <delete id="deleteBoardLike" parameterType="BoardLikeVO">
+        DELETE
+        FROM TBL_BOARD_LIKE
+        WHERE MEMBER_ID = #{memberId} AND BOARD_ID = #{boardId}
+    </delete>
+
+    <!--    게시글 좋아요 여부 조회 (사용자가 좋아요를 눌렀는지 아닌지)-->
+    <select id="checkBoardLike" parameterType="BoardLikeVO" resultType="_int">
+        SELECT COUNT(ID)
+        FROM TBL_BOARD_LIKE
+        WHERE MEMBER_ID = #{memberId}
+          AND BOARD_ID = #{boardId}
+    </select>
+
+</mapper>

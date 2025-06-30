@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.app.personalbuddyback.mapper.ScheduleMemberMapper">
+
+    <!-- 일정 멤버 등록  -->
+    <insert id="insertScheduleMember" parameterType="ScheduleMemberVO">
+        INSERT INTO TBL_SCHEDULE_MEMBER (ID, MEMBER_ID, SCHEDULE_ID)
+        VALUES (SEQ_SCHEDULE_MEMBER.NEXTVAL, #{memberId}, #{scheduleId})
+    </insert>
+
+    <!-- 일정 공유 멤버 전체 조회 -->
+    <select id="selectAllScheduleMembersByScheduleId" parameterType="Long" resultType="MemberVO">
+        SELECT TBM.ID, TBM.MEMBER_NAME, TBM.MEMBER_IMG_PATH, TBM.MEMBER_IMG_NAME
+        FROM TBL_SCHEDULE_MEMBER TBSM
+        JOIN TBL_MEMBER TBM
+        ON TBSM.MEMBER_ID = TBM.ID
+        WHERE TBSM.SCHEDULE_ID = #{scheduleId}
+    </select>
+
+    <!-- 일정 그룹 멤버 삭제 -->
+    <delete id="deleteScheduleMember" parameterType="Long">
+        DELETE FROM TBL_SCHEDULE_MEMBER
+        WHERE ID = #{id}
+    </delete>
+
+
+    <!-- 일정 그룹 멤버 삭제 By CalendarId -->
+    <delete id="deleteAllScheduleMembersByCalendarId" parameterType="Long">
+        DELETE FROM TBL_SCHEDULE_MEMBER
+        WHERE SCHEDULE_ID IN (
+            SELECT ID
+            FROM TBL_SCHEDULE
+            WHERE CALENDAR_ID = #{calendarId}
+        )
+    </delete>
+
+    <!-- 일정 그룹 멤버 삭제 By ScheduleId -->
+    <delete id="deleteAllScheduleMembersByScheduleId" parameterType="Long">
+        DELETE FROM TBL_SCHEDULE_MEMBER
+        WHERE SCHEDULE_ID = #{scheduleId}
+    </delete>
+
+</mapper>
