@@ -62,4 +62,15 @@ git clone https://github.com/your-id/personal-buddy-installable.git
 cd personal-buddy-installable
 ```
 
+### 환경 변수 파일 복사 및 설정
+# 프론트엔드
+```
+cd frontend
+cp .env.example .env   # 실제 값 입력
+```
 
+# 백엔드
+```
+cd ../backend
+cp application-example.yml application-prod.yml   # 실제 값 입력
+```
