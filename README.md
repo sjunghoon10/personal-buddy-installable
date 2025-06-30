@@ -1,8 +1,8 @@
-# Personal Buddy – 일정 공유 캘린더 설치형 웹 서비스
+# Personal Buddy – 일정 공유 캘린더 웹 서비스 설치
 
 <br>
 
-이 프로젝트는 팀 프로젝트 "Personal Buddy"를 누구나 직접 설치하고 실행할 수 있도록 정리한 설치형 웹 애플리케이션 입니다.  
+팀 프로젝트 "Personal Buddy"를 누구나 직접 설치하고 실행할 수 있도록 정리하엿습니다.
 AWS EC2와 Oracle ADB 환경에서 실행되며, 일정/초대/공유 기능이 포함된 협업 캘린더 시스템입니다.
 <br>
 <br>
@@ -47,7 +47,7 @@ personal-buddy-installable/
 
 ## 설치 및 실행 가이드
 
-### Oracle ADB 설정
+### 1.Oracle ADB 설정
 
 1. Oracle Cloud에서 ADB 인스턴스를 생성합니다.
 2. Wallet.zip을 다운로드하여 EC2 내 `/home/ubuntu/wallet/` 경로에 압축 해제합니다.
@@ -56,13 +56,13 @@ personal-buddy-installable/
     yaml
     spring.datasource.url=jdbc:oracle:thin:@your-db-name_high?TNS_ADMIN=/home/ubuntu/wallet
     ```
-### GitHub에서 프로젝트 클론:
+### 2.GitHub에서 프로젝트 클론:
 ```
 git clone https://github.com/your-id/personal-buddy-installable.git
 cd personal-buddy-installable
 ```
 
-### 환경 변수 파일 복사 및 설정
+### 3.환경 변수 파일 복사 및 설정
 # 프론트엔드
 ```
 cd frontend
@@ -74,3 +74,35 @@ cp .env.example .env   # 실제 값 입력
 cd ../backend
 cp application-example.yml application-prod.yml   # 실제 값 입력
 ```
+
+### 4.배포 스크립트 실행 (EC2)
+```
+cd ~/personal-buddy-installable
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### 환경 변수 예시
+.env.example(프론트)
+```
+REACT_APP_BACKEND_URL=http://<your-ec2-ip>:10000
+REACT_APP_WEBSOCKET_URL=ws://<your-ec2-ip>:10000
+REACT_APP_IMAGE_BASE_URL=http://<your-ec2-ip>
+```
+
+.application-example.yml(백엔드)
+```
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@your-db-name_high?TNS_ADMIN=/home/ubuntu/wallet
+    username: your_db_username
+    password: ${DB_PASSWORD}
+
+jwt:
+  secret: "YOUR_SECRET_KEY"
+# OAuth, Mail, SMS 등은 실제 값으로 별도 설정 필요
+```
+
+라이선스
+본 프로젝트는 개인 포트폴리오 용도로 작성되었으며, 상업적 이용은 금지됩니다.
+
