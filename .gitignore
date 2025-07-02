@@ -1,0 +1,41 @@
+# -----------------------
+# 민감정보 / 환경파일
+# -----------------------
+.env
+.env.*
+*.pem
+application.yml
+**/application-prod.yml
+**/tns/**
+
+# -----------------------
+# 의존성 / 빌드 결과물
+# -----------------------
+node_modules/
+build/
+dist/
+out/
+coverage/
+.gradle/
+bin/
+**/build/
+**/out/
+**/bin/
+
+# -----------------------
+# IDE 설정 (IntelliJ, VSCode 등)
+# -----------------------
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.DS_Store
+
+# -----------------------
+# 기타 불필요한 파일
+# -----------------------
+HELP.md
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

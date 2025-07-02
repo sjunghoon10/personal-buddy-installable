@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    container_name: personal-frontend
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+    container_name: personal-backend
+    restart: always
+    ports:
+      - "10000:10000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_PASSWORD=${DB_PASSWORD}
+      - TNS_ADMIN=${TNS_ADMIN}
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    container_name: personal-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
